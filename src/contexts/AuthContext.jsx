@@ -1,4 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react'
+import { URLS } from '../config.js'
+
+// import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
 
 const AuthContext = createContext(null)
 
@@ -21,29 +25,42 @@ export function AuthProvider({ children }) {
     setLoading(false)
   }, [])
 
-  // Mock login function - in a real app, this would communicate with a backend
+  // Mock login function - now making an actual API call
   const login = async (email, password) => {
     setError(null)
     
     try {
-      // Simulating API call delay
-      await new Promise(resolve => setTimeout(resolve, 800))
+      const response = await fetch(`${URLS.API_URL}/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
       
-      // Simple validation - in real app, this would be a backend auth call
-      if (email === 'sindhudurg.healthcare@maha.gov.in' && password === 'pavan') {
-        const user = { 
-          id: '1', 
-          email, 
-          name: 'AI MedAdvisor',
-          role: 'doctor',
-          avatar: 'https://i.pravatar.cc/150?img=69'
+      if (response.ok) {
+        // Handle login success
+        const user = {
+          email,
+          role: 'doctor', // Assuming the role is passed in the response
+          avatar: 'https://i.pravatar.cc/150?img=69', // Mocked avatar
         }
+
+      //    // Show success toast
+      // toast.success("Logged in successfully!", {
+      //   position: toast.POSITION.TOP_RIGHT,
+      //   autoClose: 3000,
+      //   hideProgressBar: true,
+      // });
         
         setCurrentUser(user)
         localStorage.setItem('medicalAppUser', JSON.stringify(user))
+
         return user
       } else {
-        throw new Error('Invalid email or password')
+        throw new Error(data.message || 'Login failed')
       }
     } catch (err) {
       setError(err.message)

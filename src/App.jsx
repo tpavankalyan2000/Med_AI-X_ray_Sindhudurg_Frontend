@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./components/redux_tool/authSlice.js";
+import Signup from "./pages/Signup.jsx";
 
 const store = configureStore({
   reducer: {
@@ -41,6 +42,12 @@ function App() {
             <ProtectedRoute>
               <Dashboard />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/auth/signup"
+          element={
+              <Signup />
           }
         />
         <Route path="*" element={<Navigate to="/" />} />

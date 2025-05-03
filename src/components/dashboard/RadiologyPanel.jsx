@@ -15,6 +15,8 @@ const RadiologyPanel = () => {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analysisResult, setAnalysisResult] = useState(null);
+  const [uploadedFile, setUploadedFile] = useState(null); // <-- Add this
+
 
   const handleDragOver = (e) => {
     e.preventDefault();
@@ -25,21 +27,39 @@ const RadiologyPanel = () => {
     setIsDragging(false);
   };
 
+  // const handleDrop = (e) => {
+  //   e.preventDefault();
+  //   setIsDragging(false);
+
+  //   const files = e.dataTransfer.files;
+  //   if (files.length) {
+  //     processFile(files[0]);
+  //   }
+  // };
+
+  // const handleFileChange = (e) => {
+  //   if (e.target.files.length) {
+  //     processFile(e.target.files[0]);
+  //   }
+  // };
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedFile(file); // save for future use
+      processFile(file);
+    }
+  };
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
-
-    const files = e.dataTransfer.files;
-    if (files.length) {
-      processFile(files[0]);
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      setUploadedFile(file);
+      processFile(file);
     }
   };
-
-  const handleFileChange = (e) => {
-    if (e.target.files.length) {
-      processFile(e.target.files[0]);
-    }
-  };
+  
+  
 
   // const processFile = (file) => {
   //   // Check if file is an image
@@ -124,7 +144,8 @@ const RadiologyPanel = () => {
     formData.append("file", file);
   
     // Upload file to the Flask backend
-    fetch("http://216.48.179.162:5006/generate-report", {
+    fetch("http://164.52.197.32:5006/generate-report", {
+      // fetch("http://216.48.179.162:5006/generate-report", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -241,8 +262,8 @@ const RadiologyPanel = () => {
       // ];
 
       // Randomly select one of the mock results
-      const result =
-        mockResults[Math.floor(Math.random() * mockResults.length)];
+      // const result =
+      //   mockResults[Math.floor(Math.random() * mockResults.length)];
       // setAnalysisResult(result);
     }, 3000);
   };
@@ -341,7 +362,12 @@ const RadiologyPanel = () => {
                     Remove
                   </button>
                   <button
-                    onClick={simulateAnalysis}
+                    // onClick={simulateAnalysis}
+                    onClick={() => {
+                      if (uploadedFile) {
+                        processFile(uploadedFile); // re-upload the saved file
+                      }
+                    }}
                     disabled={analyzing}
                     className={`px-4 py-2 bg-primary-600 hover:bg-primary-700 rounded-md text-white text-sm font-medium transition-colors ${
                       analyzing ? "opacity-70 cursor-not-allowed" : ""

@@ -66,7 +66,7 @@ const ChatbotPanel = () => {
     const token = "JZTGj4NLslCYnPjJbCscDGeD4JLwJhrHuruI";
 
     if (input.trim() === "") return;
-  
+
     // Add user message to the chat
     const userMessage = {
       id: messages.length + 1,
@@ -74,52 +74,114 @@ const ChatbotPanel = () => {
       text: input,
       timestamp: new Date().toISOString(),
     };
-  
+
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInput("");
     setIsTyping(true);
-  
+
     try {
       const response = await fetch("http://216.48.179.162:5000/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-           Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ query: userMessage.text }),
-      }); 
-  
+      });
+
       if (!response.ok) {
         throw new Error("Failed to get AI response");
       }
-  
+
       const data = await response.json();
-  
+
+
+      const formatResponse = (text) => {
+        const lines = text.trim().split('\n').filter(Boolean);
+      
+        let html = '<ol>'; // outer numbered list
+        let inRomanList = false;
+        
+      
+        let mainPointCount = 0;
+      
+        for (let line of lines) {
+          let trimmed = line.replace(/\*\*/g, '').trim(); // remove **
+      
+          // Detect major categories
+          if (
+            /^Types of Diabetes$/i.test(trimmed) ||
+            /^Other Forms of Diabetes$/i.test(trimmed)
+          ) {
+            if (inRomanList) {
+              html += '</ol>';
+              inRomanList = false;
+            }
+            mainPointCount++;
+            html += `<li><strong>${trimmed}</strong>`;
+            html += '<ol type="i">';
+            inRomanList = true;
+          }
+          // Subpoints (i., ii., iii.)
+          else if (/^\w/.test(trimmed) && inRomanList) {
+            html += `<li>${trimmed}</li>`;
+          }
+          // Note
+          else if (/^Note:/i.test(trimmed)) {
+            if (inRomanList) {
+              html += '</ol></li>';
+              inRomanList = false;
+            }
+            html += `<p><strong>${trimmed}</strong></p>`;
+          }
+          // Fallback
+          else {
+            if (inRomanList) {
+              html += '</ol></li>';
+              inRomanList = false;
+            }
+            html += `<p>${trimmed}</p>`;
+          }
+        }
+      
+        if (inRomanList) {
+          html += '</ol></li>';
+        }
+      
+        html += '</ol>'; // close outer list
+        return html;
+      };
+      
+      
+      
+      
+
       // Assuming your backend returns { "response": "AI's reply here" }
       const aiMessage = {
         id: messages.length + 2,
         sender: "ai",
-        text: data.response || "No response received.", // fallback if no response
+        text: formatResponse(data.response || "No response received."), // fallback if no response
+        // text: data.response || "No response received.", // fallback if no response
         timestamp: new Date().toISOString(),
       };
-  
+
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } catch (error) {
       console.error("Error sending message:", error);
-  
+
       const aiMessage = {
         id: messages.length + 2,
         sender: "ai",
         text: "Sorry, there was an error fetching the response.",
         timestamp: new Date().toISOString(),
       };
-  
+
       setMessages((prevMessages) => [...prevMessages, aiMessage]);
     } finally {
       setIsTyping(false);
     }
   };
-// ---------------------------------------------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------------------------------------------
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -133,10 +195,9 @@ const ChatbotPanel = () => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-
-
-  
-{/* ------------------------------------------------------------------------------------------------------------------- */}
+  {
+    /* ------------------------------------------------------------------------------------------------------------------- */
+  }
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -148,8 +209,9 @@ const ChatbotPanel = () => {
       setSelectedFile(null);
     }
   };
-{/* ------------------------------------------------------------------------------------------------------------------- */}
-
+  {
+    /* ------------------------------------------------------------------------------------------------------------------- */
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -204,7 +266,15 @@ const ChatbotPanel = () => {
                         : "bg-white border border-gray-200 text-gray-800 rounded-bl-none"
                     }`}
                   >
-                    <p>{message.text}</p>
+                    {message.sender === "ai" ? (
+                      <div
+                        className="whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: message.text }}
+                      />
+                    ) : (
+                      <p>{message.text}</p>
+                    )}
+                    {/* <p>{message.text}</p> */}
                     <span
                       className={`text-xs block mt-1 ${
                         message.sender === "user"
@@ -285,64 +355,62 @@ const ChatbotPanel = () => {
             </button>
           </div> */}
           {/* ------------------------------------------------added for my purpose--------------------------------------------- */}
-            <div className="relative flex items-center">
-              {/* Hidden File Input */}
-              <input
-                type="file"
-                accept=".pdf"
-                ref={fileInputRef}
-                style={{ display: "none" }}
-                onChange={handleFileChange}
-              />
+          <div className="relative flex items-center">
+            {/* Hidden File Input */}
+            <input
+              type="file"
+              accept=".pdf"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+            />
 
-              {/* Attach button */}
-              <button
-                className="absolute left-2 inset-y-0 flex items-center text-gray-500 hover:text-gray-700"
-                title="Attach PDF"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <FiPaperclip size={20} />
-              </button>
+            {/* Attach button */}
+            <button
+              className="absolute left-2 inset-y-0 flex items-center text-gray-500 hover:text-gray-700"
+              title="Attach PDF"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FiPaperclip size={20} />
+            </button>
 
-              {/* Message input */}
-              <textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message..."
-                className="flex-1 px-10 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none max-h-32"
-                rows="1"
-              />
+            {/* Message input */}
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message..."
+              className="flex-1 px-10 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 resize-none max-h-32"
+              rows="1"
+            />
 
-              {/* Send button */}
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim()}
-                className={`absolute right-2 inset-y-0 flex items-center ${
-                  input.trim()
-                    ? "text-primary-600 hover:text-primary-800"
-                    : "text-gray-400"
-                }`}
-              >
-                <FiSend size={20} />
-              </button>
-            </div>
+            {/* Send button */}
+            <button
+              onClick={sendMessage}
+              disabled={!input.trim()}
+              className={`absolute right-2 inset-y-0 flex items-center ${
+                input.trim()
+                  ? "text-primary-600 hover:text-primary-800"
+                  : "text-gray-400"
+              }`}
+            >
+              <FiSend size={20} />
+            </button>
+          </div>
           {/* ------------------------------------------------------------------------------------------------------------------- */}
 
-            {/* Preview Selected PDF File */}
-            {selectedFile && (
-              <div className="mt-2 text-sm text-gray-600 flex items-center justify-between bg-gray-100 px-3 py-1 rounded">
-                <span className="truncate max-w-[90%]">
-                  {selectedFile.name}
-                </span>
-                <button
-                  className="text-red-500 hover:text-red-700 ml-2"
-                  onClick={() => setSelectedFile(null)}
-                >
-                  ×
-                </button>
-              </div>
-            )}
+          {/* Preview Selected PDF File */}
+          {selectedFile && (
+            <div className="mt-2 text-sm text-gray-600 flex items-center justify-between bg-gray-100 px-3 py-1 rounded">
+              <span className="truncate max-w-[90%]">{selectedFile.name}</span>
+              <button
+                className="text-red-500 hover:text-red-700 ml-2"
+                onClick={() => setSelectedFile(null)}
+              >
+                ×
+              </button>
+            </div>
+          )}
 
           <p className="text-xs text-gray-500 mt-2 text-center">
             This AI assistant is for informational purposes only and does not

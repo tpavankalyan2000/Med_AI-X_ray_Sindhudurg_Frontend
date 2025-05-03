@@ -51,6 +51,11 @@ const Login = () => {
     }
   }
 
+
+  const handleNavigateToSignup = () => {
+    navigate('/auth/signup');
+  };
+
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-gray-50">
       {/* Left side - Form */}
@@ -136,6 +141,16 @@ const Login = () => {
                 )}
               </button>
             </form>
+
+            <div className="mt-4 text-center text-sm text-gray-600">
+              <p>Don't have an account?</p>
+              <button
+                onClick={handleNavigateToSignup}
+                className="font-medium text-primary-700 hover:text-primary-800"
+              >
+                Sign Up
+              </button>
+            </div>
             
             {/* <div className="mt-6 text-center text-sm text-gray-600">
               <p>Use demo credentials:</p>
